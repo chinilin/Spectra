@@ -26,9 +26,9 @@ MA.spectra <- as.data.frame(t(MA.spectra))
 
 # Savitzky-Golay filtering
 SG.spectra <- as.data.frame(savitzkyGolay(RAW.spectra,
-                                          m = 0, p = 2, w = 11))  # window size of 11 bands
-# m = 0 - just filtering
-# p = 2 - second polynomail order
+                                          m = 0, p = 2, w = 11)) # window size of 11 bands
+                                                                 # m = 0 - just filtering
+                                                                 # p = 2 - second polynomail order
 
 # compare raw spectra and spectra with Savitzky-Golay filtering
 SG.spectra <- as.data.frame(t(SG.spectra))
@@ -56,7 +56,7 @@ SD.spectra <- as.data.frame(t(SD.spectra))
 CR.spectra <- as.data.frame(continuumRemoval(SG.spectra, type = "R"))
 colnames(CR.spectra) <- colnames(SG.spectra)
 
-#  SG filtering + Standard Normal Variate (SNV)
+# SG filtering + Standard Normal Variate (SNV)
 SNV.spectra <- as.data.frame(standardNormalVariate(SG.spectra))
 
 # SG filtering + SNV–Detrend
