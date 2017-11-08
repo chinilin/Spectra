@@ -1,5 +1,5 @@
-# title         : plsr&CV.R
-# purpose       : preprocessing & transform raw spectra, fiting models
+# title         : spectra.R
+# purpose       : preprocessing & transform raw spectra, fiting models, predict target variable
 # producer      : A. Chinilin
 # address       : Moscow
 
@@ -204,7 +204,8 @@ bwplot(results, metric = "RMSE")
 # shut down the cluster 
 stopCluster(cluster)
 registerDoSEQ()
-###########################################################################
+############################################################################################
+# work with Landsat images to predict target variable
 library(RStoolbox)
 library(raster)
 library(maptools)
