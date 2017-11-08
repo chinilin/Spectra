@@ -211,6 +211,7 @@ library(raster)
 library(maptools)
 library(ggplot2)
 library(sp)
+library(plotKML)
 
 setwd("~/Google Drive/Ph.D. Thesis/Space_images/Landsat 8 OLI_TIRS/25 - Apr - 2014")
 # import Landsat metadata from MTL file
@@ -259,4 +260,13 @@ PC <- writeRaster(lsat.pca$map,
 
 C.map <- predict(lsat.pca$map, mod2$finalModel,
                  progress = "text", na.rm = T)
-spplot(C.map)
+
+scale <- list("SpatialPolygonsRescale", layout.scale.bar(), 
+              offset = c(565300,5592250), scale = 500, fill = c("transparent","black"))
+text1 <- list("sp.text", c(565300,5592310), "0")
+text2 <- list("sp.text", c(565800,5592310), "500 m")
+arrow <- list("SpatialPolygonsRescale", layout.north.arrow(), 
+              offset = c(566750,5593650), scale = 250)
+spplot(C.map, col.regions = SAGA_pal[[1]],
+       #scales = list(draw = T),
+       sp.layout=list(scale, text1, text2, arrow))
