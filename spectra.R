@@ -68,11 +68,11 @@ MSC.spectra <- as.data.frame(msc(t(RAW.spectra)))
 MSC.spectra <- as.data.frame(t(MSC.spectra))
 
 # multiplot
-par(mfcol=c(5,2))
+par(mfcol=c(4,2), mar=c(4.1,4,2.90,0.5))
 
 # 1 plot
 matplot(as.numeric(colnames(RAW.spectra)), t(RAW.spectra), type = "l",
-        xlab = "Wavelength/nm", ylab = "Reflectance", main = "RAW spectra")
+        xlab = "Wavelength/nm", ylab = "Reflectance", main = "No preprocessing")
 # 2 plot
 matplot(as.numeric(colnames(MA.spectra)), t(MA.spectra), type = "l",
         xlab = "Wavelength/nm", ylab = "Reflectance", main = "Moving average filter")
@@ -90,7 +90,7 @@ matplot(as.numeric(colnames(SNV.spectra)), t(SNV.spectra), type = "l",
         xlab = "Wavelength/nm", ylab = "", main = "Standard Normal Variate (SNV)")
 # 7 plot
 matplot(as.numeric(colnames(SNVD.spectra)), t(SNVD.spectra), type = "l",
-        xlab = "Wavelength/nm", ylab = "", main = "SNV?Detrend")
+        xlab = "Wavelength/nm", ylab = "", main = "SNV-Detrend")
 # 8 plot
 matplot(as.numeric(colnames(MSC.spectra)), t(MSC.spectra), type = "l",
         xlab = "Wavelength/nm", ylab = "", main = "Multiplicative Scatter Correction (MSC)")
@@ -101,6 +101,9 @@ dev.off()
 # save png
 # not run
 png("Spectra.png", width = 4096, height = 2160, units = 'px', res = 300)
+
+# to L8 band 2 (0,452-0,512), band 3 (0,533-0,590), band 4 (0,636-0,673) & band 5 (0,851-0,879) (Vis-NIR)
+RAW.spectra.L8 <- subset(RAW.spectra, select = -c(1:52,114:133,192:236,275:451,481:506))
 #-------------------------------------------------------------------------------------------
 # import data
 load("~/Google Drive/Ph.D. Thesis/Spectra/13_apr_2016/tr&preproc_spectra.RData")
