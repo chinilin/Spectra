@@ -40,8 +40,8 @@ legend("topleft", col = c("black", "red"), lty = 1, legend = c("Raw", "SG filter
 SG.spectra <- as.data.frame(t(SG.spectra))
 
 # 1st and 2nd derivatives with "savitzkyGolay" function
-FD.spectra <- as.data.frame(savitzkyGolay(RAW.spectra, m = 1, p = 2, w = 11))
-SD.spectra <- as.data.frame(savitzkyGolay(RAW.spectra, m = 2, p = 2, w = 11))
+FD.spectra <- as.data.frame(savitzkyGolay(RAW.spectra, m = 1, p = 2, w = 11)) # m = 1 - first derivative
+SD.spectra <- as.data.frame(savitzkyGolay(RAW.spectra, m = 2, p = 2, w = 11)) # m = 2 - second derivative
 
 FD.spectra <- as.data.frame(t(FD.spectra))
 SD.spectra <- as.data.frame(t(SD.spectra))
