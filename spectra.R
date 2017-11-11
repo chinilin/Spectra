@@ -114,7 +114,7 @@ library(doParallel)
 
 # create new variable (on my example it`s organic carbon)
 RAW.spectra$C <- c(3.21,3.71,3.55,2.67,2.09,3.16,2.87,3.40,0.74,2.07,2.96,2.93,0.98,1.81,0.86,3.47,3.35,2.67,1.81,2.45,2.03,1.87)
-RAW.spectra$Kaol <- c(7.88,3.07, 3.38,2.92,6.50,24.95,26.46,7.98,2.24,3.49,0.21,5.82,8.41,8.18,9.79,6.80)
+RAW.spectra$Kaol <- c(7.88,3.07,3.38,2.92,6.50,24.95,26.46,7.98,2.24,3.49,0.21,5.82,8.41,8.18,9.79,6.80)
 
 cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
 registerDoParallel(cluster)
@@ -198,13 +198,12 @@ mod5 <- train(C~., data = RAW.spectra,
 #-------------------------------------------------------------------------------------------
 # compile models and compare perfomance
 # if we use "ctrl1" or "ctrl2" in "trControl" parametres
-model_list <- list(PLSR = mod1, PCA_SLM = mod2, GLMnet = mod3, RF = mod4,
-                   XGBoost = mod5)
+model_list <- list(PLSR = mod1, PCA_SLM = mod2, GLMnet = mod3, RF = mod4)
 results <- resamples(model_list)
 # boxplot comparing results
-bwplot(results, metric = "Rsquared")
-bwplot(results, metric = "RMSE")
-# shut down the cluster 
+bwplot(results, metric = "Rsquared", main = "Algorithms accuracy comparing")
+bwplot(results, metric = "RMSE", main = "Algorithms accuracy comparing",
+       xlim = c(0,2))
 stopCluster(cluster)
 registerDoSEQ()
 ############################################################################################
