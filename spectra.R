@@ -131,7 +131,8 @@ mod1 <- train(C~., data = RAW.spectra, # change data
               metric = "RMSE",
               trControl = ctrl1,
               preProcess = c("center", "scale"))
-plot(varImp(object = mod1), main = "PLSR - Variable Importance", top = 15)
+plot(varImp(object = mod1), main = "PLSR - Variable Importance",
+     top = 15, ylab = "Variable")
 # check CV profile
 plot(mod1)
 # or
@@ -158,7 +159,9 @@ mod2 <- train(C~., data = RAW.spectra,
               trace = F)
 # regression coeffitients
 coefs <- coef(mod2$finalModel)
-plot(varImp(object = mod2), main = "Stepwise LM + PCA - Variable Importance", top = 15)
+plot(varImp(object = mod2),
+     main = "Stepwise LM + PCA - Variable Importance",
+     top = 15, ylab = "Variable")
 #-------------------------------------------------------------------------------------------
 # Ridge or lasso regression
 # note, that if "alpha" is set to 0 this process runs a ridge model,
@@ -170,7 +173,8 @@ mod3 <- train(C~., data = RAW.spectra, # change data
               metric = "RMSE",
               trControl = ctrl1,
               preProcess = c("center", "scale"))
-plot(varImp(object = mod3), main = "Elastic Net - Variable Importance", top = 15)
+plot(varImp(object = mod3), main = "Elastic Net - Variable Importance",
+     top = 15, ylab = "Variable")
 #-------------------------------------------------------------------------------------------
 # RF
 rftg <- data.frame(mtry = seq(2, 55, by = 2)) # take a lot of time to compute
