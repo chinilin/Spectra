@@ -11,7 +11,7 @@ RAW.spectra <- RAW.spectra[-1, ]
 
 library(prospectr) # https://cran.r-project.org/web/packages/prospectr/prospectr.pdf
 
-# Moving average or runnnig mean
+# simple moving (or running) average filter
 MA.spectra <- as.data.frame(movav(RAW.spectra, w = 11)) # window size of 11 bands
 # note that the 5 first and last bands are lost in the process
 
@@ -24,9 +24,11 @@ legend("topleft", col = c("black", "red"), lty = 1, legend = c("Raw", "Moving av
        text.col = c("black", "red"))
 MA.spectra <- as.data.frame(t(MA.spectra))
 
-# Savitzky-Golay filtering
+# Savitzky–Golay smoothing. Savitzky-Golay filtering is a very common
+# preprocessing technique. It fits a local polynomial regression
+# on the signal and requires equidistant bandwidth. 
 SG.spectra <- as.data.frame(savitzkyGolay(RAW.spectra,
-                                          m = 0, p = 2, w = 11)) # window size of 11 bands
+                                          m = 0, p = 2, w = 11)) # w = 11  (must be odd)  window size of 11 bands
                                                                  # m = 0 - just filtering
                                                                  # p = 2 - second polynomail order
 
@@ -39,7 +41,9 @@ legend("topleft", col = c("black", "red"), lty = 1, legend = c("Raw", "SG filter
        text.col = c("black", "red"))
 SG.spectra <- as.data.frame(t(SG.spectra))
 
-# 1st and 2nd derivatives with "savitzkyGolay" function
+# 1st and 2nd derivatives with "savitzkyGolay" function. Taking (numerical)
+# derivatives of the spectra can remove both additive and multiplicative effects in the
+# spectra
 FD.spectra <- as.data.frame(savitzkyGolay(RAW.spectra, m = 1, p = 2, w = 11)) # m = 1 - first derivative
 SD.spectra <- as.data.frame(savitzkyGolay(RAW.spectra, m = 2, p = 2, w = 11)) # m = 2 - second derivative
 
@@ -52,14 +56,21 @@ legend("bottomleft", legend = c("1st der", "2nd der"), lty = c(1, 1), col = 1:2,
 FD.spectra <- as.data.frame(t(FD.spectra))
 SD.spectra <- as.data.frame(t(SD.spectra))
 
-# SG filtering + Continuum removal
+# SG filtering + compute continuum–removed values. The continuum removal technique was introduced by as an effective method to highlight absorption
+# features of minerals. It can be viewed as an albedo normalization technique. This technique is based on
+# the computation of the continuum (or envelope) of a given spectrum. 
 CR.spectra <- as.data.frame(continuumRemoval(SG.spectra, type = "R"))
 colnames(CR.spectra) <- colnames(SG.spectra)
 
-# SG filtering + Standard Normal Variate (SNV)
+# SG filtering + Standard Normal Variate (SNV) transformation. Standard
+# Normal Variate (SNV) is another simple way for normalizing spectra that intends to correct
+# for light scatter.It is better to perform SNV transformation after filtering (by e.g. Savitzky–
+# Golay) than the reverse.
 SNV.spectra <- as.data.frame(standardNormalVariate(SG.spectra))
 
-# SG filtering + SNV–Detrend
+# SG filtering + detrend normalization. The SNV–Detrend further accounts for wavelength-dependent scattering effects (variation in curvilinearity
+# between the spectra). After a SNV transformation, a 2nd–order polynomial is fit to the spectrum
+# and subtracted from it.
 SNVD.spectra <- as.data.frame(detrend(SG.spectra, wav = as.numeric(colnames(SG.spectra))))
 
 # SG filtering + Multiplicative Scatter Correction (MSC)
