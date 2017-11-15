@@ -213,7 +213,8 @@ mod5 <- train(C~., data = RAW.spectra,
 #-------------------------------------------------------------------------------------------
 # compile models and compare perfomance
 # if we use "ctrl1" or "ctrl2" in "trControl" parametres
-model_list <- list(PLSR = mod1, PCA_SLM = mod2, GLMnet = mod3, RF = mod4)
+model_list <- list(PLSR = mod1, StepLM_PCA = mod2, Lasso/Ridge = mod3,
+                   RF = mod4)
 results <- resamples(model_list)
 # boxplot comparing results
 bwplot(results, metric = "Rsquared", main = "Algorithms accuracy comparing")
