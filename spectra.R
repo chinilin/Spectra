@@ -288,3 +288,47 @@ arrow <- list("SpatialPolygonsRescale", layout.north.arrow(),
 spplot(C.map, col.regions = SAGA_pal[[1]],
        #scales = list(draw = T),
        sp.layout=list(scale, text1, text2, arrow))
+#-------------------------------------------------------------------------------------------
+# work with Landsat images (level 2 data product - surface reflectance)
+library(raster)
+library(rgdal)
+library(RStoolbox)
+library(maptools)
+library(plotKML)
+
+stack <- stack("LC08_L1TP_175025_20140324_20170424_01_T1_sr_band2.tif",
+               "LC08_L1TP_175025_20140324_20170424_01_T1_sr_band3.tif",
+               "LC08_L1TP_175025_20140324_20170424_01_T1_sr_band4.tif",
+               "LC08_L1TP_175025_20140324_20170424_01_T1_sr_band5.tif")
+ggRGB(stack, r = 3, g = 2, b = 1,
+      stretch = "lin")
+
+# crop the data
+fields <- readShapePoly("Fields_of_interest.shp")
+stack.sub <- crop(stack, extent(fields))
+stack.sub <- mask(stack.sub, fields)
+ggRGB(stack.sub, r = 3, g = 2, b = 1, stretch = "lin")+
+  ggtitle("Test fields")
+
+# calculates R-mode PCA for RasterBricks or RasterStacks and
+# returns a RasterBrick with multiple layers of PCA scores
+stack.pca <- rasterPCA(stack.sub,
+                      spca = T,
+                      nComp = 2,     # can change
+                      maskCheck = T,
+                      nSamples = NULL)
+summary(stack.pca$model)
+
+# predict target variable
+C.map <- predict(stack.pca$map, mod2$finalModel,
+                 progress = "text", na.rm = T)
+
+scale <- list("SpatialPolygonsRescale", layout.scale.bar(), 
+              offset = c(565300,5592250), scale = 500, fill = c("transparent","black"))
+text1 <- list("sp.text", c(565300,5592310), "0")
+text2 <- list("sp.text", c(565800,5592310), "500 m")
+arrow <- list("SpatialPolygonsRescale", layout.north.arrow(), 
+              offset = c(566750,5593650), scale = 250)
+spplot(C.map, col.regions = SAGA_pal[[1]],
+       #scales = list(draw = T),
+       sp.layout=list(scale, text1, text2, arrow))
