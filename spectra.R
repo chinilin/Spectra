@@ -123,8 +123,10 @@ library(pls)
 library(caret)
 library(doParallel)
 
-# create new variable (on my example it`s organic carbon)
+# create new variable (on my example it`s organic carbon or kaolinite content)
+colnames(RAW.spectra) <- paste(colnames(RAW.spectra), "nm")
 RAW.spectra$C <- c(3.21,3.71,3.55,2.67,2.09,3.16,2.87,3.40,0.74,2.07,2.96,2.93,0.98,1.81,0.86,3.47,3.35,2.67,1.81,2.45,2.03,1.87)
+RAW.spectra <- RAW.spectra[-c(5,7,8,11,13,20), ]
 RAW.spectra$Kaol <- c(7.88,3.07,3.38,2.92,6.50,24.95,26.46,7.98,2.24,3.49,0.21,5.82,8.41,8.18,9.79,6.80)
 
 cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
@@ -137,12 +139,12 @@ ctrl2 <- trainControl(method = "cv", number = 5)
 #-------------------------------------------------------------------------------------------
 # train PLSR model
 set.seed(1234)
-mod1 <- train(C~., data = RAW.spectra, # change data
+mod1 <- train(Kaol~., data = RAW.spectra, # change data
               method = "pls",
               metric = "RMSE",
               trControl = ctrl1,
               preProcess = c("center", "scale"))
-plot(varImp(object = mod1), main = "PLSR - Variable Importance",
+plot(varImp(object = mod1), main = "PLSR - Variable Importance (RAW spectra)",
      top = 15, ylab = "Variable")
 # check CV profile
 plot(mod1)
@@ -163,7 +165,7 @@ validationplot(mod1.2)
 #-------------------------------------------------------------------------------------------
 # PCA-Stepwise LM
 set.seed(1234)
-mod2 <- train(C~., data = RAW.spectra,
+mod2 <- train(Kaol~., data = RAW.spectra,
               method = "lmStepAIC",
               trControl = ctrl1,
               preProcess = c("center", "scale", "pca"),
@@ -179,7 +181,7 @@ plot(varImp(object = mod2),
 # if it’s set to 1 it runs a LASSO model and an "alpha" between 0 and 1
 # results in an elastic net model
 set.seed(1234)
-mod3 <- train(C~., data = RAW.spectra, # change data
+mod3 <- train(Kaol~., data = RAW.spectra, # change data
               method = "glmnet",
               metric = "RMSE",
               trControl = ctrl1,
@@ -194,7 +196,7 @@ rftg <- data.frame(mtry = seq(2, 55, by = 2)) # take a lot of time to compute
 mtry <- as.integer(sqrt(ncol(RAW.spectra[, 1:506])))
 rf.tuneGrid <- expand.grid(.mtry = mtry)
 set.seed(1234)
-mod4 <- train(C~., data = RAW.spectra,
+mod4 <- train(Kaol~., data = RAW.spectra,
               method = "rf",
               tuneGrid = rf.tuneGrid, # or rftg
               trControl = ctrl1)
