@@ -98,7 +98,7 @@ matplot(as.numeric(colnames(SD.spectra)), t(SD.spectra), type = "l",
         xlab = "Wavelength/nm", ylab = "", main = "2-nd derivative")
 # 6 plot
 matplot(as.numeric(colnames(SNV.spectra)), t(SNV.spectra), type = "l",
-        xlab = "Wavelength/nm", ylab = "", main = "Standard Normal Variate (SNV)")
+        xlab = "Wavelength/nm", ylab = "", main = "Standart Normal Variate (SNV)")
 # 7 plot
 matplot(as.numeric(colnames(SNVD.spectra)), t(SNVD.spectra), type = "l",
         xlab = "Wavelength/nm", ylab = "", main = "SNV-Detrend")
