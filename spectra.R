@@ -1,7 +1,7 @@
 # title         : spectra.R
 # purpose       : preprocessing & transform raw spectra, fiting models, predict target variable
 # producer      : A. Chinilin
-# address       : Moscow
+# address       : Moscow. RSAU-MTAA
 
 # import data
 data <- read.table(file.choose(), header=TRUE, sep="\t") # data.frame with raw spectra
@@ -123,11 +123,12 @@ library(pls)
 library(caret)
 library(doParallel)
 
-# create new variable (on my example it`s organic carbon or kaolinite content)
-colnames(RAW.spectra) <- paste(colnames(RAW.spectra), "nm")
+# create new variable (on my example it`s organic carbon or kaolinite & smektite content)
+colnames(SNV.spectra) <- paste(colnames(SNV.spectra), "nm")
 RAW.spectra$C <- c(3.21,3.71,3.55,2.67,2.09,3.16,2.87,3.40,0.74,2.07,2.96,2.93,0.98,1.81,0.86,3.47,3.35,2.67,1.81,2.45,2.03,1.87)
-RAW.spectra <- RAW.spectra[-c(5,7,8,11,13,20), ]
+SNV.spectra <- SNV.spectra[-c(5,7,8,11,13,20), ]
 RAW.spectra$Kaol <- c(7.88,3.07,3.38,2.92,6.50,24.95,26.46,7.98,2.24,3.49,0.21,5.82,8.41,8.18,9.79,6.80)
+SNV.spectra$Sm <- c(58.85,59.63,65.21,50.03,58.76,42.93,43.50,54.32,69.07,48.24,59.60,57.61,55.36,51.36,50.91,52.60)
 
 cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
 registerDoParallel(cluster)
@@ -139,7 +140,7 @@ ctrl2 <- trainControl(method = "cv", number = 5)
 #-------------------------------------------------------------------------------------------
 # train PLSR model
 set.seed(1234)
-mod1 <- train(Kaol~., data = RAW.spectra, # change data
+mod1 <- train(Sm~., data = RAW.spectra, # change data
               method = "pls",
               metric = "RMSE",
               trControl = ctrl1,
@@ -165,7 +166,7 @@ validationplot(mod1.2)
 #-------------------------------------------------------------------------------------------
 # PCA-Stepwise LM
 set.seed(1234)
-mod2 <- train(Kaol~., data = RAW.spectra,
+mod2 <- train(Sm~., data = RAW.spectra,
               method = "lmStepAIC",
               trControl = ctrl1,
               preProcess = c("center", "scale", "pca"),
@@ -173,7 +174,7 @@ mod2 <- train(Kaol~., data = RAW.spectra,
 # regression coeffitients
 coefs <- coef(mod2$finalModel)
 plot(varImp(object = mod2),
-     main = "Stepwise LM + PCA - Variable Importance",
+     main = "PCA + Stepwise LM - Variable Importance",
      top = 15, ylab = "Variable")
 #-------------------------------------------------------------------------------------------
 # Ridge or lasso regression
@@ -181,13 +182,14 @@ plot(varImp(object = mod2),
 # if it’s set to 1 it runs a LASSO model and an "alpha" between 0 and 1
 # results in an elastic net model
 set.seed(1234)
-mod3 <- train(Kaol~., data = RAW.spectra, # change data
+mod3 <- train(Sm~., data = SNV.spectra, # change data
               method = "glmnet",
               metric = "RMSE",
               trControl = ctrl1,
               preProcess = c("center", "scale"))
-plot(varImp(object = mod3), main = "Elastic Net - Variable Importance",
+plot(varImp(object = mod3), main = "Lasso/Ridge - Variable Importance",
      top = 15, ylab = "Variable")
+png(".png", width = 1920, height = 1080, units = 'px', res = 300)
 #-------------------------------------------------------------------------------------------
 # RF
 rftg <- data.frame(mtry = seq(2, 55, by = 2)) # take a lot of time to compute
@@ -196,29 +198,35 @@ rftg <- data.frame(mtry = seq(2, 55, by = 2)) # take a lot of time to compute
 mtry <- as.integer(sqrt(ncol(RAW.spectra[, 1:506])))
 rf.tuneGrid <- expand.grid(.mtry = mtry)
 set.seed(1234)
-mod4 <- train(Kaol~., data = RAW.spectra,
+mod4 <- train(Sm~., data = RAW.spectra,
               method = "rf",
               tuneGrid = rf.tuneGrid, # or rftg
-              trControl = ctrl1)
+              trControl = ctrl1,
+              importance = TRUE)
+plot(varImp(object = mod4), main = "Randon Forest - Variable Importance",
+     top = 15, ylab = "Variable")
 #-------------------------------------------------------------------------------------------
 # XGBoost
-gb.tuneGrid <- expand.grid(eta=c(0.3,0.4),
-                           nrounds=c(50,100),
+gb.tuneGrid <- expand.grid(eta=c(0.3,0.4,0.5,0.6),
+                           nrounds=c(50,100,150),
                            max_depth=2:3, gamma=0,
                            colsample_bytree=0.8, min_child_weight=1,
                            subsample = 1)
 set.seed(1234)
-mod5 <- train(C~., data = RAW.spectra,
+mod5 <- train(Sm~., data = RAW.spectra,
               method = "xgbTree",
               tuneGrid = gb.tuneGrid,
               trControl = ctrl1)
+plot(varImp(object = mod5), main = "XGBoost - Variable Importance",
+     top = 15, ylab = "Variable")
 #-------------------------------------------------------------------------------------------
 # compile models and compare perfomance
 # if we use "ctrl1" or "ctrl2" in "trControl" parametres
-model_list <- list(PLSR = mod1, StepLM_PCA = mod2, Lasso/Ridge = mod3,
+model_list <- list(PLSR = mod1, PCA_StepLM = mod2, Lasso_Ridge = mod3,
                    RF = mod4)
 results <- resamples(model_list)
 # boxplot comparing results
+bwplot(results, layout = c(3, 1)) # RMSE, MSE and R-squared
 bwplot(results, metric = "Rsquared", main = "Algorithms accuracy comparing")
 bwplot(results, metric = "RMSE", main = "Algorithms accuracy comparing",
        xlim = c(0,2))
