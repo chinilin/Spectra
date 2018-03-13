@@ -207,10 +207,10 @@ plot(varImp(object = mod4), main = "Randon Forest - Variable Importance",
      top = 15, ylab = "Variable")
 #-------------------------------------------------------------------------------------------
 # XGBoost
-gb.tuneGrid <- expand.grid(eta=c(0.3,0.4,0.5,0.6),
-                           nrounds=c(50,100,150),
-                           max_depth=2:3, gamma=0,
-                           colsample_bytree=0.8, min_child_weight=1,
+gb.tuneGrid <- expand.grid(eta = c(0.3,0.4,0.5,0.6),
+                           nrounds = c(50,100,150),
+                           max_depth = 2:3, gamma = 0,
+                           colsample_bytree = 0.8, min_child_weight = 1,
                            subsample = 1)
 set.seed(1234)
 mod5 <- train(Sm~., data = RAW.spectra,
