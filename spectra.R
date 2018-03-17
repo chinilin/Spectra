@@ -75,7 +75,7 @@ SNVD.spectra <- as.data.frame(detrend(SG.spectra, wav = as.numeric(colnames(SG.s
 
 # SG filtering + Multiplicative Scatter Correction (MSC)
 library(pls)
-MSC.spectra <- as.data.frame(msc(t(RAW.spectra)))
+MSC.spectra <- as.data.frame(msc(t(SG.spectra)))
 MSC.spectra <- as.data.frame(t(MSC.spectra))
 
 # multiplot
@@ -233,7 +233,7 @@ bwplot(results, metric = "RMSE", main = "Algorithms accuracy comparing",
 stopCluster(cluster)
 registerDoSEQ()
 ############################################################################################
-# work with Landsat images to predict target variable
+# with Landsat images to predict target variable
 library(RStoolbox)
 library(raster)
 library(maptools)
@@ -299,7 +299,7 @@ spplot(C.map, col.regions = SAGA_pal[[1]],
        #scales = list(draw = T),
        sp.layout=list(scale, text1, text2, arrow))
 #-------------------------------------------------------------------------------------------
-# work with Landsat images (level 2 data product - surface reflectance)
+# with Landsat images (level 2 data product - surface reflectance)
 library(raster)
 library(rgdal)
 library(RStoolbox)
