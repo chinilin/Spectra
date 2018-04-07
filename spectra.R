@@ -29,8 +29,8 @@ MA.spectra <- as.data.frame(t(MA.spectra))
 # on the signal and requires equidistant bandwidth. 
 SG.spectra <- as.data.frame(savitzkyGolay(RAW.spectra,
                                           m = 0, p = 2, w = 11)) # w = 11  (must be odd)  window size of 11 bands
-                                                                 # m = 0 - just filtering
-                                                                 # p = 2 - second polynomail order
+# m = 0 - just filtering
+# p = 2 - second polynomial order
 
 # compare raw spectra and spectra with Savitzky-Golay filtering
 SG.spectra <- as.data.frame(t(SG.spectra))
@@ -112,20 +112,17 @@ dev.off()
 # save png
 # not run
 png("Spectra.png", width = 4096, height = 2160, units = 'px', res = 300)
-
-# to L8 band 2 (0,452-0,512), band 3 (0,533-0,590), band 4 (0,636-0,673) & band 5 (0,851-0,879) (Vis-NIR)
-RAW.spectra.L8 <- subset(RAW.spectra, select = -c(1:52,114:133,192:236,275:451,481:506))
+dev.off()
 #-------------------------------------------------------------------------------------------
 # import data
 load("~/Google Drive/Ph.D. Thesis/Spectra/13_apr_2016/tr&preproc_spectra.RData")
 
-library(pls)
 library(caret)
 library(doParallel)
 
 # create new variable (on my example it`s organic carbon or kaolinite & smektite content)
-colnames(SNV.spectra) <- paste(colnames(SNV.spectra), "nm")
-RAW.spectra$C <- c(3.21,3.71,3.55,2.67,2.09,3.16,2.87,3.40,0.74,2.07,2.96,2.93,0.98,1.81,0.86,3.47,3.35,2.67,1.81,2.45,2.03,1.87)
+colnames(FD.spectra) <- paste(colnames(FD.spectra), "nm")
+FD.spectra$C <- c(3.21,3.71,3.55,2.67,2.09,3.16,2.87,3.40,0.74,2.07,2.96,2.93,0.98,1.81,0.86,3.47,3.35,2.67,1.81,2.45,2.03,1.87)
 SNV.spectra <- SNV.spectra[-c(5,7,8,11,13,20), ]
 RAW.spectra$Kaol <- c(7.88,3.07,3.38,2.92,6.50,24.95,26.46,7.98,2.24,3.49,0.21,5.82,8.41,8.18,9.79,6.80)
 SNV.spectra$Sm <- c(58.85,59.63,65.21,50.03,58.76,42.93,43.50,54.32,69.07,48.24,59.60,57.61,55.36,51.36,50.91,52.60)
@@ -140,41 +137,37 @@ ctrl2 <- trainControl(method = "cv", number = 5)
 #-------------------------------------------------------------------------------------------
 # train PLSR model
 set.seed(1234)
-mod1 <- train(Sm~., data = RAW.spectra, # change data
+mod1 <- train(C~., data = SNVD.spectra, # change data
               method = "pls",
               metric = "RMSE",
               trControl = ctrl1,
               preProcess = c("center", "scale"))
 plot(varImp(object = mod1), main = "PLSR - Variable Importance (RAW spectra)",
      top = 15, ylab = "Variable")
-# check CV profile
-plot(mod1)
-# or
-mod1.1 <- plsr(C~., data = RAW.spectra,
-               scale = T,
-               validation = "CV",
-               segments = 5, jackknife = T)
-summary(mod1.1)
-plot(RMSEP(mod1.1), legendpos = "topright")
-explvar(mod1.1)
-# or train PCR model
-mod1.2 <- pcr(C~., data = RAW.spectra,
-              scale = T,
-              validation = "CV",
-              segments = 5, jackknife = T)
-validationplot(mod1.2)
 #-------------------------------------------------------------------------------------------
-# PCA-Stepwise LM
+# Principal Component Analysis
+pcr.grid <- expand.grid(ncomp = 1:10)
 set.seed(1234)
-mod2 <- train(Sm~., data = RAW.spectra,
+mod2 <- train(C~., data = FD.spectra, # change data
+              method = "pcr",
+              metric = "RMSE",
+              trControl = ctrl1,
+              tuneGrid = pcr.grid,
+              preProcess = c("center", "scale"))
+plot(varImp(object = mod2), main = "PCR - Variable Importance (FD spectra)", # best for SOC
+     top = 15, ylab = "Variable")
+#-------------------------------------------------------------------------------------------
+# PCA + MLR with Stepwise Selection
+set.seed(1234)
+mod3 <- train(C~., data = SNVD.spectra,
               method = "lmStepAIC",
               trControl = ctrl1,
               preProcess = c("center", "scale", "pca"),
               trace = F)
 # regression coeffitients
-coefs <- coef(mod2$finalModel)
-plot(varImp(object = mod2),
-     main = "PCA + Stepwise LM - Variable Importance",
+coefs <- coef(mod3$finalModel)
+plot(varImp(object = mod3),
+     main = "PCA + MLR - Variable Importance",
      top = 15, ylab = "Variable")
 #-------------------------------------------------------------------------------------------
 # Ridge or lasso regression
@@ -182,12 +175,12 @@ plot(varImp(object = mod2),
 # if itвЂ™s set to 1 it runs a LASSO model and an "alpha" between 0 and 1
 # results in an elastic net model
 set.seed(1234)
-mod3 <- train(Sm~., data = SNV.spectra, # change data
+mod4 <- train(C~., data = SNVD.spectra, # change data
               method = "glmnet",
               metric = "RMSE",
               trControl = ctrl1,
               preProcess = c("center", "scale"))
-plot(varImp(object = mod3), main = "Lasso/Ridge - Variable Importance",
+plot(varImp(object = mod4), main = "Lasso/Ridge - Variable Importance",
      top = 15, ylab = "Variable")
 png(".png", width = 1920, height = 1080, units = 'px', res = 300)
 #-------------------------------------------------------------------------------------------
@@ -195,15 +188,15 @@ png(".png", width = 1920, height = 1080, units = 'px', res = 300)
 rftg <- data.frame(mtry = seq(2, 55, by = 2)) # take a lot of time to compute
 # can change parametres
 # or
-mtry <- as.integer(sqrt(ncol(RAW.spectra[, 1:506])))
+mtry <- as.integer(sqrt(ncol(FD.spectra[, 1:496])))
 rf.tuneGrid <- expand.grid(.mtry = mtry)
 set.seed(1234)
-mod4 <- train(Sm~., data = RAW.spectra,
+mod5 <- train(C~., data = FD.spectra,
               method = "rf",
               tuneGrid = rf.tuneGrid, # or rftg
               trControl = ctrl1,
               importance = TRUE)
-plot(varImp(object = mod4), main = "Randon Forest - Variable Importance",
+plot(varImp(object = mod5), main = "Randon Forest - Variable Importance (FD spectra)",
      top = 15, ylab = "Variable")
 #-------------------------------------------------------------------------------------------
 # XGBoost
@@ -213,18 +206,31 @@ gb.tuneGrid <- expand.grid(eta = c(0.3,0.4,0.5,0.6),
                            colsample_bytree = 0.8, min_child_weight = 1,
                            subsample = 1)
 set.seed(1234)
-mod5 <- train(Sm~., data = RAW.spectra,
+mod6 <- train(C~., data = SNVD.spectra,
               method = "xgbTree",
               tuneGrid = gb.tuneGrid,
               trControl = ctrl1)
-plot(varImp(object = mod5), main = "XGBoost - Variable Importance",
+plot(varImp(object = mod6), main = "XGBoost - Variable Importance",
+     top = 15, ylab = "Variable")
+#-------------------------------------------------------------------------------------------
+# SVM
+svmRadialTuneGrid <- expand.grid(sigma = c(0.05,0.0456,0.0577),
+                                 C = c(1.5,1.596,1.65,1.89,1.95,2,2.2,2.44))
+set.seed(1234)
+mod7 <- train(C~., data = RAW.spectra,
+              method = "svmRadial",
+              tuneGrid = svmRadialTuneGrid,
+              preProcess = c("center", "scale"),
+              trControl = ctrl1)
+plot(varImp(object = mod7), main = "SVM - Variable Importance",
      top = 15, ylab = "Variable")
 #-------------------------------------------------------------------------------------------
 # compile models and compare perfomance
 # if we use "ctrl1" or "ctrl2" in "trControl" parametres
-model_list <- list(PLSR = mod1, PCA_StepLM = mod2, Lasso_Ridge = mod3,
-                   RF = mod4)
+model_list <- list(PLSR = mod1, PCR = mod2, GLMNET = mod4,
+                   RF = mod5, XGBoost = mod6)
 results <- resamples(model_list)
+summary(results)
 # boxplot comparing results
 bwplot(results, layout = c(3, 1)) # RMSE, MSE and R-squared
 bwplot(results, metric = "Rsquared", main = "Algorithms accuracy comparing")
@@ -232,113 +238,12 @@ bwplot(results, metric = "RMSE", main = "Algorithms accuracy comparing",
        xlim = c(0,2))
 stopCluster(cluster)
 registerDoSEQ()
-############################################################################################
-# with Landsat images to predict target variable
-library(RStoolbox)
-library(raster)
-library(maptools)
-library(ggplot2)
-library(sp)
-library(plotKML)
-
-setwd("~/Google Drive/Ph.D. Thesis/Space_images/Landsat 8 OLI_TIRS/25 - Apr - 2014")
-# import Landsat metadata from MTL file
-metaData <- readMeta("~/Google Drive/Ph.D. Thesis/Space_images/Landsat 8 OLI_TIRS/25 - Apr - 2014/LC08_L1TP_175025_20140425_20170423_01_T1_MTL.txt")
-# load Landsat bands based on metadata
-lsat <- stackMeta(metaData)
-# plotting of remote sensing imagery in RGB with ggplot2
-ggRGB(lsat, r = 4, g = 3, b = 2,
-      stretch = "lin")
-# radiometric conversions and corrections
-lsat.ref <- radCor(lsat, metaData = metaData,
-                   method = "apref",
-                   bandSet = c("B2_dn", "B3_dn", "B4_dn","B5_dn"))
-# crop the data
-fields <- readShapePoly("Fields_of_interest.shp")
-lsat.sub <- crop(lsat.ref, extent(fields))
-lsat.sub <- mask(lsat.sub, fields)
-ggRGB(lsat.sub, r = 4, g = 3, b = 2, stretch = "lin")+
-  ggtitle("Test fields")
-# unsupervised ckustering using kmeans clustering
-set.seed(21)
-unC <- unsuperClass(lsat.sub,
-                    nSamples = 250,
-                    nClasses = 8,
-                    nStarts = 3)
-unC
-colors <- rainbow(8)
-plot(unC$map, col = colors, box = F,
-     legend = F, axes = F, main = "K-means classification")
-legend(567000,5593750, legend = paste0("C", 1:8), fill = colors,
-       title = "Classes", horiz = F, bty = "n")
-# calculates R-mode PCA for RasterBricks or RasterStacks and
-# returns a RasterBrick with multiple layers of PCA scores
-lsat.pca <- rasterPCA(lsat.sub,
-                      spca = T,
-                      nComp = 2,     # can change
-                      maskCheck = T,
-                      nSamples = NULL)
-summary(lsat.pca$model)
-# write PC rasters
-PC <- writeRaster(lsat.pca$map,
-                  filename = c("PC1.tiff","PC2.tiff"),
-                  format = "GTiff",
-                  bylayer = T,
-                  datatype = "INT2S")
-
-C.map <- predict(lsat.pca$map, mod2$finalModel,
-                 progress = "text", na.rm = T)
-
-scale <- list("SpatialPolygonsRescale", layout.scale.bar(), 
-              offset = c(565300,5592250), scale = 500, fill = c("transparent","black"))
-text1 <- list("sp.text", c(565300,5592310), "0")
-text2 <- list("sp.text", c(565800,5592310), "500 m")
-arrow <- list("SpatialPolygonsRescale", layout.north.arrow(), 
-              offset = c(566750,5593650), scale = 250)
-spplot(C.map, col.regions = SAGA_pal[[1]],
-       #scales = list(draw = T),
-       sp.layout=list(scale, text1, text2, arrow))
 #-------------------------------------------------------------------------------------------
-# with Landsat images (level 2 data product - surface reflectance)
-library(raster)
-library(rgdal)
-library(RStoolbox)
-library(maptools)
-library(plotKML)
-
-stack <- stack("LC08_L1TP_175025_20140324_20170424_01_T1_sr_band2.tif",
-               "LC08_L1TP_175025_20140324_20170424_01_T1_sr_band3.tif",
-               "LC08_L1TP_175025_20140324_20170424_01_T1_sr_band4.tif",
-               "LC08_L1TP_175025_20140324_20170424_01_T1_sr_band5.tif")
-ggRGB(stack, r = 3, g = 2, b = 1,
-      stretch = "lin")
-
-# crop the data
-fields <- readShapePoly("Fields_of_interest.shp")
-stack.sub <- crop(stack, extent(fields))
-stack.sub <- mask(stack.sub, fields)
-ggRGB(stack.sub, r = 3, g = 2, b = 1, stretch = "lin")+
-  ggtitle("Test fields")
-
-# calculates R-mode PCA for RasterBricks or RasterStacks and
-# returns a RasterBrick with multiple layers of PCA scores
-stack.pca <- rasterPCA(stack.sub,
-                      spca = T,
-                      nComp = 2,     # can change
-                      maskCheck = T,
-                      nSamples = NULL)
-summary(stack.pca$model)
-
-# predict target variable
-C.map <- predict(stack.pca$map, mod2$finalModel,
-                 progress = "text", na.rm = T)
-
-scale <- list("SpatialPolygonsRescale", layout.scale.bar(), 
-              offset = c(565300,5592250), scale = 500, fill = c("transparent","black"))
-text1 <- list("sp.text", c(565300,5592310), "0")
-text2 <- list("sp.text", c(565800,5592310), "500 m")
-arrow <- list("SpatialPolygonsRescale", layout.north.arrow(), 
-              offset = c(566750,5593650), scale = 250)
-spplot(C.map, col.regions = SAGA_pal[[1]],
-       #scales = list(draw = T),
-       sp.layout=list(scale, text1, text2, arrow))
+require(gridExtra)
+grid.arrange(plot(varImp(object = mod2), main = "PCR - Variable Importance (FD spectra)",
+                  top = 15, ylab = "Переменная", xlab = "Значимость"),
+             plot(varImp(object = mod5), main = "Randon Forest - Variable Importance (FD spectra)",
+                  top = 15, ylab = "Переменная", xlab = "Значимость"),
+             ncol = 2, nrow = 1)
+png("SOC Importance PCR&RF.png", width = 3200, height = 1800, units = 'px', res = 300)
+dev.off()
