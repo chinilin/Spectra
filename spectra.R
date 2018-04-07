@@ -29,8 +29,8 @@ MA.spectra <- as.data.frame(t(MA.spectra))
 # on the signal and requires equidistant bandwidth. 
 SG.spectra <- as.data.frame(savitzkyGolay(RAW.spectra,
                                           m = 0, p = 2, w = 11)) # w = 11  (must be odd)  window size of 11 bands
-# m = 0 - just filtering
-# p = 2 - second polynomial order
+                                                                 # m = 0 - just filtering
+                                                                 # p = 2 - second polynomial order
 
 # compare raw spectra and spectra with Savitzky-Golay filtering
 SG.spectra <- as.data.frame(t(SG.spectra))
@@ -62,7 +62,7 @@ SD.spectra <- as.data.frame(t(SD.spectra))
 CR.spectra <- as.data.frame(continuumRemoval(SG.spectra, type = "R"))
 colnames(CR.spectra) <- colnames(SG.spectra)
 
-# SG filtering + Standard Normal Variate (SNV) transformation. Standard
+# SG filtering + Standart Normal Variate (SNV) transformation. Standard
 # Normal Variate (SNV) is another simple way for normalizing spectra that intends to correct
 # for light scatter.It is better to perform SNV transformation after filtering (by e.g. Savitzkyâ€“
 # Golay) than the reverse.
@@ -120,12 +120,12 @@ load("~/Google Drive/Ph.D. Thesis/Spectra/13_apr_2016/tr&preproc_spectra.RData")
 library(caret)
 library(doParallel)
 
-# create new variable (on my example it`s organic carbon or kaolinite & smektite content)
-colnames(FD.spectra) <- paste(colnames(FD.spectra), "nm")
-FD.spectra$C <- c(3.21,3.71,3.55,2.67,2.09,3.16,2.87,3.40,0.74,2.07,2.96,2.93,0.98,1.81,0.86,3.47,3.35,2.67,1.81,2.45,2.03,1.87)
-SNV.spectra <- SNV.spectra[-c(5,7,8,11,13,20), ]
+# create new variable (on my example it`s organic carbon content or kaolinite & smektite content)
+colnames(RAW.spectra) <- paste(colnames(RAW.spectra), "nm")
+RAW.spectra$C <- c(3.21,3.71,3.55,2.67,2.09,3.16,2.87,3.40,0.74,2.07,2.96,2.93,0.98,1.81,0.86,3.47,3.35,2.67,1.81,2.45,2.03,1.87)
+RAW.spectra <- RAW.spectra[-c(5,7,8,11,13,20), ]
 RAW.spectra$Kaol <- c(7.88,3.07,3.38,2.92,6.50,24.95,26.46,7.98,2.24,3.49,0.21,5.82,8.41,8.18,9.79,6.80)
-SNV.spectra$Sm <- c(58.85,59.63,65.21,50.03,58.76,42.93,43.50,54.32,69.07,48.24,59.60,57.61,55.36,51.36,50.91,52.60)
+RAW.spectra$Sm <- c(58.85,59.63,65.21,50.03,58.76,42.93,43.50,54.32,69.07,48.24,59.60,57.61,55.36,51.36,50.91,52.60)
 
 cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
 registerDoParallel(cluster)
@@ -137,29 +137,29 @@ ctrl2 <- trainControl(method = "cv", number = 5)
 #-------------------------------------------------------------------------------------------
 # train PLSR model
 set.seed(1234)
-mod1 <- train(C~., data = SNVD.spectra, # change data
+mod1 <- train(C~., data = RAW.spectra, # change data
               method = "pls",
               metric = "RMSE",
               trControl = ctrl1,
               preProcess = c("center", "scale"))
-plot(varImp(object = mod1), main = "PLSR - Variable Importance (RAW spectra)",
+plot(varImp(object = mod1), main = "PLSR - Variable Importance",
      top = 15, ylab = "Variable")
 #-------------------------------------------------------------------------------------------
 # Principal Component Analysis
 pcr.grid <- expand.grid(ncomp = 1:10)
 set.seed(1234)
-mod2 <- train(C~., data = FD.spectra, # change data
+mod2 <- train(C~., data = RAW.spectra, # change data
               method = "pcr",
               metric = "RMSE",
               trControl = ctrl1,
               tuneGrid = pcr.grid,
               preProcess = c("center", "scale"))
-plot(varImp(object = mod2), main = "PCR - Variable Importance (FD spectra)", # best for SOC
+plot(varImp(object = mod2), main = "PCR - Variable Importance",
      top = 15, ylab = "Variable")
 #-------------------------------------------------------------------------------------------
 # PCA + MLR with Stepwise Selection
 set.seed(1234)
-mod3 <- train(C~., data = SNVD.spectra,
+mod3 <- train(C~., data = RAW.spectra,
               method = "lmStepAIC",
               trControl = ctrl1,
               preProcess = c("center", "scale", "pca"),
@@ -175,7 +175,7 @@ plot(varImp(object = mod3),
 # if itâ€™s set to 1 it runs a LASSO model and an "alpha" between 0 and 1
 # results in an elastic net model
 set.seed(1234)
-mod4 <- train(C~., data = SNVD.spectra, # change data
+mod4 <- train(C~., data = RAW.spectra, # change data
               method = "glmnet",
               metric = "RMSE",
               trControl = ctrl1,
@@ -188,15 +188,15 @@ png(".png", width = 1920, height = 1080, units = 'px', res = 300)
 rftg <- data.frame(mtry = seq(2, 55, by = 2)) # take a lot of time to compute
 # can change parametres
 # or
-mtry <- as.integer(sqrt(ncol(FD.spectra[, 1:496])))
+mtry <- as.integer(sqrt(ncol(RAW.spectra[, 1:496])))
 rf.tuneGrid <- expand.grid(.mtry = mtry)
 set.seed(1234)
-mod5 <- train(C~., data = FD.spectra,
+mod5 <- train(C~., data = RAW.spectra,
               method = "rf",
               tuneGrid = rf.tuneGrid, # or rftg
               trControl = ctrl1,
               importance = TRUE)
-plot(varImp(object = mod5), main = "Randon Forest - Variable Importance (FD spectra)",
+plot(varImp(object = mod5), main = "Randon Forest - Variable Importance",
      top = 15, ylab = "Variable")
 #-------------------------------------------------------------------------------------------
 # XGBoost
@@ -206,7 +206,7 @@ gb.tuneGrid <- expand.grid(eta = c(0.3,0.4,0.5,0.6),
                            colsample_bytree = 0.8, min_child_weight = 1,
                            subsample = 1)
 set.seed(1234)
-mod6 <- train(C~., data = SNVD.spectra,
+mod6 <- train(C~., data = RAW.spectra,
               method = "xgbTree",
               tuneGrid = gb.tuneGrid,
               trControl = ctrl1)
@@ -241,9 +241,9 @@ registerDoSEQ()
 #-------------------------------------------------------------------------------------------
 require(gridExtra)
 grid.arrange(plot(varImp(object = mod2), main = "PCR - Variable Importance (FD spectra)",
-                  top = 15, ylab = "Ïåğåìåííàÿ", xlab = "Çíà÷èìîñòü"),
+                  top = 15, ylab = "Variable"),
              plot(varImp(object = mod5), main = "Randon Forest - Variable Importance (FD spectra)",
-                  top = 15, ylab = "Ïåğåìåííàÿ", xlab = "Çíà÷èìîñòü"),
+                  top = 15, ylab = "Variable"),
              ncol = 2, nrow = 1)
 png("SOC Importance PCR&RF.png", width = 3200, height = 1800, units = 'px', res = 300)
 dev.off()
