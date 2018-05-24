@@ -79,26 +79,26 @@ MSC.spectra <- as.data.frame(msc(t(SG.spectra)))
 MSC.spectra <- as.data.frame(t(MSC.spectra))
 
 # multiplot
-par(mfcol=c(4,2), mar=c(4.1,4,2.90,0.5))
+par(mfcol=c(2,3), mar=c(4.1,4,2.90,0.5))
 
 # 1 plot
 matplot(as.numeric(colnames(RAW.spectra)), t(RAW.spectra), type = "l",
-        xlab = "Wavelength/nm", ylab = "Reflectance", main = "No preprocessing")
+        xlab = "Длина волны, нм", ylab = "Отражение") # main = "No preprocessing"
 # 2 plot
 matplot(as.numeric(colnames(MA.spectra)), t(MA.spectra), type = "l",
-        xlab = "Wavelength/nm", ylab = "Reflectance", main = "Moving average filter")
+        xlab = "Длина волны, нм", ylab = "Отражение") # main = "Moving average filter"
 # 3 plot
 matplot(as.numeric(colnames(SG.spectra)), t(SG.spectra), type = "l",
-        xlab = "Wavelength/nm", ylab = "Reflectance", main = "Savitzky-Golay filter")
+        xlab = "Длина волны, нм", ylab = "Отражение") # main = "Savitzky-Golay filter"
 # 4 plot
 matplot(as.numeric(colnames(FD.spectra)), t(FD.spectra), type = "l",
-        xlab = "Wavelength/nm", ylab = "", main = "1-st derivative")
+        xlab = "Длина волны, нм", ylab = "") # main = "1-st derivative"
 # 5 plot
 matplot(as.numeric(colnames(SD.spectra)), t(SD.spectra), type = "l",
-        xlab = "Wavelength/nm", ylab = "", main = "2-nd derivative")
+        xlab = "Длина волны, нм", ylab = "", cex.axis = .97) # main = "2-nd derivative"
 # 6 plot
 matplot(as.numeric(colnames(SNV.spectra)), t(SNV.spectra), type = "l",
-        xlab = "Wavelength/nm", ylab = "", main = "Standart Normal Variate (SNV)")
+        xlab = "Длина волны, нм", ylab = "") # main = "Standart Normal Variate (SNV)"
 # 7 plot
 matplot(as.numeric(colnames(SNVD.spectra)), t(SNVD.spectra), type = "l",
         xlab = "Wavelength/nm", ylab = "", main = "SNV-Detrend")
@@ -111,7 +111,7 @@ matplot(as.numeric(colnames(CR.spectra)), t(CR.spectra), type = "l",
 dev.off()
 # save png
 # not run
-png("Spectra.png", width = 4096, height = 2160, units = 'px', res = 300)
+png("_.png", width = 4096, height = 2160, units = 'px', res = 300)
 dev.off()
 #-------------------------------------------------------------------------------------------
 # import data
@@ -196,7 +196,7 @@ mod5 <- train(C~., data = RAW.spectra,
               tuneGrid = rf.tuneGrid, # or rftg
               trControl = ctrl1,
               importance = TRUE)
-plot(varImp(object = mod5), main = "Randon Forest - Variable Importance",
+plot(varImp(object = mod5), main = "Random Forest - Variable Importance",
      top = 15, ylab = "Variable")
 #-------------------------------------------------------------------------------------------
 # XGBoost
@@ -240,10 +240,12 @@ stopCluster(cluster)
 registerDoSEQ()
 #-------------------------------------------------------------------------------------------
 require(gridExtra)
-grid.arrange(plot(varImp(object = mod2), main = "PCR - Variable Importance (FD spectra)",
-                  top = 15, ylab = "Variable"),
-             plot(varImp(object = mod5), main = "Randon Forest - Variable Importance (FD spectra)",
-                  top = 15, ylab = "Variable"),
-             ncol = 2, nrow = 1)
-png("SOC Importance PCR&RF.png", width = 3200, height = 1800, units = 'px', res = 300)
+grid.arrange(plot(varImp(object = mod2), # main = "_ - Variable Importance (_ spectra)"
+                  top = 15, ylab = "Переменная", xlab = "Значимость"),
+             plot(varImp(object = mod1), # main = "_ - Variable Importance (_ spectra)"
+                  top = 15, ylab = "Переменная", xlab = "Значимость"),
+             plot(varImp(object = mod5), # main = "_ - Variable Importance (_ spectra)"
+                  top = 15, ylab = "Переменная", xlab = "Значимость"),
+             ncol = 3, nrow = 1)
+png("_.png", width = 3200, height = 1800, units = 'px', res = 300)
 dev.off()
