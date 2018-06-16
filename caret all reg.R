@@ -3,15 +3,17 @@
 # producer      : A. Chinilin
 # address       : Moscow. RSAU-MTAA
 
-models <- c("glmnet", "knn",
-            "pcaNNet", "pcr", "pls", "ranger", "qrf",
-            "cubist", "svmRadial", "xgbTree")
-
 # load all libraries
 library(doParallel)
 library(caret)
 library(dplyr)
 library(DT)
+
+models <- c("glmnet", "knn",
+            "pcaNNet", "pcr", "pls", "ranger", "qrf",
+            "cubist", "svmRadial", "xgbTree")
+
+
 cl <- makeCluster(detectCores())
 registerDoParallel(cl)
 
@@ -23,7 +25,7 @@ ctrl1 <- trainControl(method = "repeatedcv", number = 5,
 l <- lapply(models, function(i) 
 {cat("----------------------------------------------------","\n");
   set.seed(1234); cat(i," <- done\n");
-  t2 <- train(C~., data = RAW.spectra, (i), trControl = ctrl1,
+  t <- train(C~., data = RAW.spectra, (i), trControl = ctrl1,
               preProcess = c("center", "scale"),
               metric = "RMSE")
 }
