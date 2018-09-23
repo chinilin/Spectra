@@ -25,14 +25,14 @@ ctrl1 <- trainControl(method = "repeatedcv", number = 5,
 l <- lapply(models, function(i) 
 {cat("----------------------------------------------------","\n");
   set.seed(1234); cat(i," <- done\n");
-  t <- train(C~., data = RAW.spectra, (i), trControl = ctrl1,
+  t <- train(C~., data = FD.spectra, (i), trControl = ctrl1,
               preProcess = c("center", "scale"),
               metric = "RMSE")
 }
 )
 
 # use lapply to print the results
-results <- lapply(1:length(l), function(i) 
+results <- lapply(1:length(l), function(i)
 {cat(sprintf("%-20s",(models[i])));
   cat(round(l[[i]]$results$Rsquared[which.min(l[[i]]$results$RMSE)],4),"\t");
   cat(round(l[[i]]$results$RMSE[which.min(l[[i]]$results$RMSE)],4),"\t")
@@ -71,18 +71,19 @@ df
 datatable(df,  options = list(
   columnDefs = list(list(className = 'dt-left', targets = c(0,1,2,3,4,5))),
   pageLength = MAX,
-  order = list(list(2, 'desc'))),
-  colnames = c('Num', 'Name', 'R2', 'RMSE', 'time [s]', 'Model name'),
-  caption = paste('Regression results from caret models'),
+  order = list(list(3, 'desc'))),
+  colnames = c('№', 'Name', 'R2', 'RMSE', 'time [s]', 'Model name'),
+  caption = paste('Regression results from "caret" list models'),
   class = 'cell-border stripe')  %>%
   formatRound('x2', 3) %>%
   formatRound('x3', 3) %>%
   formatRound('x4', 3) %>%
-  formatStyle(2,
-              background = styleColorBar(x2, 'steelblue'),
+  formatStyle(3,
+              background = styleColorBar(x3, 'steelblue'),
               backgroundSize = '100% 90%',
               backgroundRepeat = 'no-repeat',
-              backgroundPosition = 'center'
+              backgroundPosition = 'center',
+              fontWeight = 'bold'
   )
 # compile models and compare perfomance
 model_list <- list(GLMNET = l[[1]], KNN = l[[2]], pcaNNet = l[[3]],
@@ -109,10 +110,10 @@ cvMethods <- c("boot", # bootstrap
 # use R lapply function to loop through all CV methos with qrf
 all <- lapply(cvMethods, function(x)
   {set.seed(1234); print(x); tc <- trainControl(method=(x))
-fit1 <- train(C~., data = RAW.spectra,
+fit1 <- train(C~., data = FD.spectra,
               preProcess = c("center", "scale"),
               trControl = tc,
-              method = "pcr") # may choose any of possible regression models
+              method = "pls") # may choose any of possible regression models
 }
 )
 
